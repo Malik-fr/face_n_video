@@ -13,9 +13,14 @@ from django.http import HttpResponse
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import numpy as np
-import cv2
-import pickle
-import shutil
+import cv2, pickle
+from rest_framework.parsers import FileUploadParser, MultiPartParser
+#from moviepy.editor import VideoFileClip
+from django.http import StreamingHttpResponse
+from .models import Video
+from .serializers import VideoSerializer
+from moviepy.video.io.VideoFileClip import VideoFileClip
+from django.http import FileResponse
 
 class ImageUploadView(APIView):
     def post(self, request):
@@ -161,4 +166,47 @@ class ImageEnroll(APIView):
             #return Response(, status=status.HTTP_201_CREATED)
         else:
             print('errorssss....', serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+class VideoUploadView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = VideoSerializer(data=request.data)
+        if serializer.is_valid():
+            video = serializer.save()  # Save the uploaded video
+
+            # Process the video (e.g., clipping the first 10 seconds)
+            video_path = video.video_file.path
+            start_time=video.start_time
+            end_time=video.end_time
+            print('video_path...', video_path)
+            print(f'start_time:{start_time}....end_time:{end_time}')
+            processed_video_path = os.path.join(settings.MEDIA_ROOT, 'processed_videos', os.path.basename(video_path))
+            os.makedirs(processed_video_path, exist_ok=True)
+            print(f'processed_video_path:{processed_video_path}')
+            processed_video_path = os.path.splitext(processed_video_path)[0] + "_processed.mp4"
+            print(f'again processed_video_path:{processed_video_path}')
+
+            try:
+                with VideoFileClip(video_path) as video_clip:
+                    # Example processing: clip the first 10 seconds
+                    processed_clip = video_clip.subclip(start_time, end_time)
+                    processed_clip.write_videofile(processed_video_path, codec="libx264")
+
+                # Save the path to the processed video
+                #video.processed_video_file.name = os.path.relpath(processed_video_path, settings.MEDIA_ROOT)
+                #print(f'video.processed_video_file.name: {video.processed_video_file.name }')
+                #video.save()
+                print(f'processed_video_path to open video file {processed_video_path}')
+                video = open(processed_video_path, 'rb')
+                return FileResponse(video, content_type='video/webm')
+                #return Response(VideoSerializer(video).data, status=status.HTTP_201_CREATED)
+
+            except Exception as e:
+                print(f'error :{e}')
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

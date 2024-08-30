@@ -1,12 +1,12 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 class UploadedImage(models.Model):
     image = models.ImageField(upload_to='uploads/')
     name = models.CharField(max_length=255)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
-from django.db import models
-from django.core.exceptions import ValidationError
+
 
 class Person(models.Model):
     image = models.ImageField(upload_to='uploads/')
@@ -25,3 +25,13 @@ class Person(models.Model):
         if Person.objects.filter(name=self.name, father_name=self.father_name, date_of_birth=self.date_of_birth).exists():
             raise ValidationError("This combination of name, father_name, and date_of_birth already exists.")
         super(Person, self).save(*args, **kwargs)
+
+
+class Video(models.Model):
+    video_file = models.FileField(upload_to='videos/')
+    start_time=models.IntegerField()
+    end_time=models.IntegerField()
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.video_file}"

@@ -100,7 +100,7 @@ def recog_face_updated(loaded_encodings, current_img_pat):
   face_locations = face_recognition.face_locations(image, model='hog')
   face_encodings = face_recognition.face_encodings(image, face_locations)
   if len(face_locations)==0:
-     return 'No face detected..'
+     return 'No face detected...'
 
   boolean_matches = face_recognition.compare_faces(loaded_encodings["encodings"], face_encodings[0])
   face_dist=face_recognition.face_distance(loaded_encodings["encodings"], face_encodings[0])
